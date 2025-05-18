@@ -1,0 +1,1730 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis Comparativo de Rendimiento para Cuentas de Retiro</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --dark-bg: #0f172a;
+            --secondary-bg: #1e293b;
+            --blue-accent: #3b82f6; /* Este es el azul que usaremos para el título */
+            --blue-dark: #1d4ed8;
+            --orange-accent: #f97316;
+            --orange-dark: #ea580c;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --border-color: #334155;
+        }
+        
+        body {
+            background-color: var(--dark-bg);
+            color: var(--text-primary);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+        }
+        
+        .accent-blue {
+            color: var(--blue-accent);
+        }
+        
+        .accent-orange {
+            color: var(--orange-accent);
+        }
+        
+        .bg-card {
+            background-color: var(--secondary-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+        }
+        
+        .section-header {
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.75rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+        
+        .section-header::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            height: 3px;
+            width: 60px;
+            background: linear-gradient(90deg, var(--blue-accent), var(--orange-accent));
+        }
+        
+        .metric-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        }
+        
+        .tab-btn {
+            position: relative;
+            cursor: pointer;
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .tab-btn.active {
+            color: var(--text-primary);
+            border-bottom-color: var(--blue-accent);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        
+        table th, table td {
+            border: 1px solid var(--border-color);
+            padding: 0.75rem 1rem;
+            text-align: left;
+        }
+        
+        table th {
+            background-color: rgba(59, 130, 246, 0.1);
+            font-weight: 600;
+        }
+        
+        table tr:nth-child(even) td {
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+        
+        .highlight-box {
+            border-left: 4px solid var(--orange-accent);
+            background-color: rgba(249, 115, 22, 0.1);
+            padding: 1rem;
+        }
+        
+        .icon-feature {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 9999px;
+            margin-bottom: 1rem;
+        }
+        
+        /* Progress indicator para acompañar scroll */
+        .progress-container {
+            position: fixed;
+            top: 0;
+            z-index: 1000;
+            width: 100%;
+            height: 4px;
+            background: transparent;
+        }
+        
+        .progress-bar {
+            height: 4px;
+            background: linear-gradient(90deg, var(--blue-accent), var(--orange-accent));
+            width: 0%;
+        }
+        
+        /* Animaciones para las tarjetas */
+        .card-animation {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        
+        .card-animation.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        /* Timeline para proyección de crecimiento */
+        .timeline {
+            position: relative;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .timeline::after {
+            content: '';
+            position: absolute;
+            width: 4px;
+            background: linear-gradient(to bottom, var(--blue-accent), var(--orange-accent));
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            margin-left: -2px;
+        }
+        
+        .timeline-container {
+            padding: 10px 40px;
+            position: relative;
+            width: 50%;
+            box-sizing: border-box;
+        }
+        
+        .timeline-container.left {
+            left: 0;
+        }
+        
+        .timeline-container.right {
+            left: 50%;
+        }
+        
+        .timeline-container::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            right: -10px;
+            top: 15px;
+            background-color: var(--dark-bg);
+            border: 4px solid var(--blue-accent);
+            border-radius: 50%;
+            z-index: 1;
+        }
+        
+        .timeline-container.right::after {
+            left: -10px;
+            border-color: var(--orange-accent);
+        }
+        
+        .timeline-content {
+            padding: 15px;
+            background-color: var(--secondary-bg);
+            position: relative;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+        
+        /* Tooltip personalizado */
+        .custom-tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+        }
+        
+        .custom-tooltip .tooltiptext {
+            visibility: hidden;
+            width: 220px;
+            background-color: rgba(15, 23, 42, 0.95);
+            color: var(--text-primary);
+            text-align: center;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -110px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 14px;
+            line-height: 1.4;
+            border: 1px solid var(--border-color);
+        }
+        
+        .custom-tooltip .tooltiptext::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: var(--secondary-bg) transparent transparent transparent;
+        }
+        
+        .custom-tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        /* Toggle switch para modo comparación */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+        
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #2b3b54;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: var(--text-primary);
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: var(--blue-accent);
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
+        /* Styling for the visualizations */
+        .visualization-container {
+            border-radius: 8px;
+            overflow: hidden;
+            background-color: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(51, 65, 85, 0.5);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* Gradient Cards */
+        .gradient-card {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(249, 115, 22, 0.1));
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .gradient-card:hover {
+            box-shadow: 0 0 25px rgba(59, 130, 246, 0.2);
+            transform: translateY(-5px);
+        }
+        
+        /* Interactive Stats */
+        .stat-container {
+            counter-reset: stat-counter;
+        }
+        
+        .stat-item {
+            position: relative;
+            padding-left: 3rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .stat-item:before {
+            counter-increment: stat-counter;
+            content: counter(stat-counter);
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 2rem;
+            width: 2rem;
+            background: linear-gradient(135deg, var(--blue-accent), var(--orange-accent));
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="progress-container">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+    
+    <div class="page-container mx-auto px-4 py-8 max-w-7xl">
+        <header class="mb-12 text-center">
+            <h1 class="text-5xl font-bold mb-4 accent-blue">
+                Análisis Comparativo de Rendimiento a Largo Plazo para Cuentas de Retiro
+            </h1>
+            <p class="text-2xl text-gray-400 max-w-3xl mx-auto">
+                Evaluación del tiempo necesario para alcanzar $1,000,000 USD netos con diferentes instrumentos de inversión para el retiro
+            </p>
+			<p class="text-xl text-gray-400 max-w-3xl mx-auto">
+                       ___________________________________________
+            </p>
+			<p class="text-xl text-gray-400 max-w-3xl mx-auto">
+                Elaborado por: Ing. Norberto Urdaneta
+            </p>
+        </header>
+        
+        <section class="bg-card p-6 mb-12 card-animation">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <h2 class="text-2xl font-semibold mb-4 section-header">Objetivo del Análisis</h2>
+                    <p class="mb-4">
+                        Este estudio determina el tiempo necesario para alcanzar un valor neto de <strong class="accent-orange">$1,000,000 USD</strong> (después de impuestos y gastos) en diferentes tipos de cuentas de retiro, considerando una capacidad de ahorro anual de <strong class="accent-blue">$12,000 USD</strong>.
+                    </p>
+                    <div class="highlight-box rounded-md mb-4">
+                        <h3 class="font-semibold mb-2">Instrumentos Analizados:</h3>
+                        <ul class="list-disc pl-5 space-y-1">
+                            <li>IRA Tradicional</li>
+                            <li>Roth IRA</li>
+                            <li>401(k) Tradicional sin employer match</li>
+                            <li>401(k) Tradicional con employer match</li>
+                        </ul>
+                    </div>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-semibold mb-4 section-header">Resultado Principal</h2>
+                    <div class="h-72 visualization-container p-3">
+                        <canvas id="timeComparison"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            <div class="bg-card p-6 rounded-lg metric-card card-animation">
+                <div class="icon-feature bg-blue-900 mx-auto">
+                    <i class="fas fa-piggy-bank text-blue-400 text-xl"></i>
+                </div>
+                <h3 class="text-center text-xl font-semibold mb-2">IRA Tradicional</h3>
+                <div class="text-center mb-2">
+                    <span class="text-4xl font-bold accent-blue counter">37.5</span>
+                    <span class="text-gray-400 text-sm">años</span>
+                </div>
+                <div class="text-center text-sm text-gray-400">
+                    Aportación: $7,500/año<br>
+                    Edad meta: 67.5 años<br>
+                    Rendimiento real: 7.27%
+                </div>
+            </div>
+            
+            <div class="bg-card p-6 rounded-lg metric-card card-animation" style="transition-delay: 0.1s;">
+                <div class="icon-feature bg-orange-900 mx-auto">
+                    <i class="fas fa-shield-alt text-orange-400 text-xl"></i>
+                </div>
+                <h3 class="text-center text-xl font-semibold mb-2">Roth IRA</h3>
+                <div class="text-center mb-2">
+                    <span class="text-4xl font-bold accent-orange counter">33.8</span>
+                    <span class="text-gray-400 text-sm">años</span>
+                </div>
+                <div class="text-center text-sm text-gray-400">
+                    Aportación: $7,500/año<br>
+                    Edad meta: 63.8 años<br>
+                    Rendimiento real: 7.27%
+                </div>
+            </div>
+            
+            <div class="bg-card p-6 rounded-lg metric-card card-animation" style="transition-delay: 0.2s;">
+                <div class="icon-feature bg-blue-900 mx-auto">
+                    <i class="fas fa-chart-line text-blue-400 text-xl"></i>
+                </div>
+                <h3 class="text-center text-xl font-semibold mb-2">401(k) sin Match</h3>
+                <div class="text-center mb-2">
+                    <span class="text-4xl font-bold accent-blue counter">32.4</span>
+                    <span class="text-gray-400 text-sm">años</span>
+                </div>
+                <div class="text-center text-sm text-gray-400">
+                    Aportación: $12,000/año<br>
+                    Edad meta: 62.4 años<br>
+                    Rendimiento real: 6.87%
+                </div>
+            </div>
+            
+            <div class="bg-card p-6 rounded-lg metric-card card-animation" style="transition-delay: 0.3s;">
+                <div class="icon-feature bg-orange-900 mx-auto">
+                    <i class="fas fa-handshake text-orange-400 text-xl"></i>
+                </div>
+                <h3 class="text-center text-xl font-semibold mb-2">401(k) con Match</h3>
+                <div class="text-center mb-2">
+                    <span class="text-4xl font-bold accent-orange counter">29.5</span>
+                    <span class="text-gray-400 text-sm">años</span>
+                </div>
+                <div class="text-center text-sm text-gray-400">
+                    Aportación: $12,000 + $3,000 match<br>
+                    Edad meta: 59.5 años<br>
+                    Rendimiento real: 6.87%
+                </div>
+            </div>
+        </div>
+        
+        <section class="bg-card p-6 mb-12 card-animation">
+            <h2 class="text-2xl font-semibold mb-6 section-header">Comparador Interactivo de Cuentas</h2>
+            
+            <div class="flex flex-wrap items-center justify-center gap-4 mb-8">
+                <div class="bg-blue-900 bg-opacity-30 p-3 rounded-md flex items-center">
+                    <input type="checkbox" id="ira-trad" class="account-toggle mr-2" checked>
+                    <label for="ira-trad" class="cursor-pointer">IRA Tradicional</label>
+                </div>
+                <div class="bg-orange-900 bg-opacity-30 p-3 rounded-md flex items-center">
+                    <input type="checkbox" id="roth-ira" class="account-toggle mr-2" checked>
+                    <label for="roth-ira" class="cursor-pointer">Roth IRA</label>
+                </div>
+                <div class="bg-blue-900 bg-opacity-30 p-3 rounded-md flex items-center">
+                    <input type="checkbox" id="401k-no" class="account-toggle mr-2" checked>
+                    <label for="401k-no" class="cursor-pointer">401(k) sin Match</label>
+                </div>
+                <div class="bg-orange-900 bg-opacity-30 p-3 rounded-md flex items-center">
+                    <input type="checkbox" id="401k-match" class="account-toggle mr-2" checked>
+                    <label for="401k-match" class="cursor-pointer">401(k) con Match</label>
+                </div>
+            </div>
+            
+            <div class="flex flex-wrap items-center justify-center mb-6">
+                <span class="mr-2">Comparar por:</span>
+                <div class="inline-flex bg-gray-800 rounded-md p-1">
+                    <button class="comparison-btn active px-4 py-2 rounded-md" data-type="years">Años</button>
+                    <button class="comparison-btn px-4 py-2 rounded-md" data-type="contributions">Aportaciones</button>
+                    <button class="comparison-btn px-4 py-2 rounded-md" data-type="value">Valor Final</button>
+                </div>
+            </div>
+            
+            <div class="visualization-container p-4">
+                <div class="h-80">
+                    <canvas id="interactiveComparison"></canvas>
+                </div>
+            </div>
+        </section>
+        
+        <section class="bg-card p-6 mb-12 card-animation">
+            <h2 class="text-2xl font-semibold mb-4 section-header">Supuestos Clave Utilizados (Mayo 2025)</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <h3 class="text-xl font-semibold mb-3 accent-blue">Inversión Base</h3>
+                    <ul class="space-y-2 mb-6">
+                        <li><i class="fas fa-chart-bar mr-2 text-sm text-gray-400"></i> Fondos invertidos en instrumento que replica el S&P 500</li>
+                        <li class="custom-tooltip"><i class="fas fa-percentage mr-2 text-sm text-gray-400"></i> Rendimiento nominal anual: <strong>10.2%</strong>
+                            <span class="tooltiptext">Basado en el promedio geométrico de los últimos 30 años del S&P 500 a mayo 2025</span>
+                        </li>
+                        <li><i class="fas fa-chart-line mr-2 text-sm text-gray-400"></i> Volatilidad/Desviación estándar: 15-20% anual (referencial)</li>
+                    </ul>
+                    
+                    <h3 class="text-xl font-semibold mb-3 accent-blue">Inflación</h3>
+                    <ul class="space-y-2 mb-6">
+                        <li class="custom-tooltip"><i class="fas fa-dollar-sign mr-2 text-sm text-gray-400"></i> Tasa de inflación anual promedio: <strong>2.9%</strong>
+                            <span class="tooltiptext">Promedio de inflación en EE.UU. durante los últimos 10 años a mayo 2025</span>
+                        </li>
+                        <li><i class="fas fa-calculator mr-2 text-sm text-gray-400"></i> Rendimiento real: Ajustado por inflación y gastos</li>
+                    </ul>
+                    
+                    <h3 class="text-xl font-semibold mb-3 accent-blue">Aportaciones Anuales</h3>
+                    <ul class="space-y-2">
+                        <li><i class="fas fa-wallet mr-2 text-sm text-gray-400"></i> Capacidad máxima de ahorro: <strong>$12,000 USD</strong> anuales</li>
+                        <li class="custom-tooltip"><i class="fas fa-funnel-dollar mr-2 text-sm text-gray-400"></i> Límites de contribución (2025): <strong>IRA</strong>: $7,500; <strong>401(k)</strong>: $23,500
+                            <span class="tooltiptext">Límites establecidos por el IRS para el año fiscal 2025</span>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-xl font-semibold mb-3 accent-orange">Perfil del Inversionista</h3>
+                    <ul class="space-y-2 mb-6">
+                        <li><i class="fas fa-user mr-2 text-sm text-gray-400"></i> Edad inicial: <strong>30 años</strong></li>
+                        <li class="custom-tooltip"><i class="fas fa-file-invoice-dollar mr-2 text-sm text-gray-400"></i> Tasa impositiva efectiva: <strong>25%</strong> (federal + estatal)
+                            <span class="tooltiptext">Tasa combinada aplicable a los retiros de cuentas con impuestos diferidos</span>
+                        </li>
+                    </ul>
+                    
+                    <h3 class="text-xl font-semibold mb-3 accent-orange">Gastos y Comisiones</h3>
+                    <ul class="space-y-2 mb-6">
+                        <li><i class="fas fa-hand-holding-usd mr-2 text-sm text-gray-400"></i> Expense Ratio S&P 500: <strong>0.03%</strong> anual</li>
+                        <li class="custom-tooltip"><i class="fas fa-money-bill-wave mr-2 text-sm text-gray-400"></i> Comisiones 401(k): <strong>0.40%</strong> anual adicional
+                            <span class="tooltiptext">Comisiones administrativas promedio de planes 401(k) corporativos</span>
+                        </li>
+                        <li><i class="fas fa-piggy-bank mr-2 text-sm text-gray-400"></i> Comisiones IRA: <strong>$0</strong></li>
+                    </ul>
+                    
+                    <h3 class="text-xl font-semibold mb-3 accent-orange">Employer Match 401(k)</h3>
+                    <ul class="space-y-2">
+                        <li><i class="fas fa-hands-helping mr-2 text-sm text-gray-400"></i> La empresa iguala el <strong>50%</strong> de contribuciones sobre primeros $6,000</li>
+                        <li><i class="fas fa-coins mr-2 text-sm text-gray-400"></i> Máximo aporte del empleador: <strong>$3,000</strong> anuales</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+        
+        <section class="bg-card p-6 mb-12 card-animation">
+            <h2 class="text-2xl font-semibold mb-6 section-header">Proyección de Crecimiento</h2>
+            
+            <div class="mb-6 flex flex-wrap items-center justify-center gap-4">
+                <span>Seleccione una cuenta:</span>
+                <div class="inline-flex bg-gray-800 rounded-md p-1">
+                    <button class="growth-btn active px-4 py-2 rounded-md" data-account="ira-trad">IRA Tradicional</button>
+                    <button class="growth-btn px-4 py-2 rounded-md" data-account="roth-ira">Roth IRA</button>
+                    <button class="growth-btn px-4 py-2 rounded-md" data-account="401k-no">401(k) sin Match</button>
+                    <button class="growth-btn px-4 py-2 rounded-md" data-account="401k-match">401(k) con Match</button>
+                </div>
+            </div>
+            
+            <div class="visualization-container p-4">
+                <div class="h-80">
+                    <canvas id="growthChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="mt-6 p-4 gradient-card">
+                <h3 class="text-xl font-semibold mb-3">Factores que Impactan el Crecimiento</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-secondary-bg p-3 rounded-md">
+                        <h4 class="font-semibold mb-2 text-blue-400"><i class="fas fa-percentage mr-2"></i>Rendimiento</h4>
+                        <p class="text-sm">El rendimiento anual afecta exponencialmente el crecimiento a largo plazo. Un 1% adicional de rendimiento puede acortar años para alcanzar la meta.</p>
+                    </div>
+                    <div class="bg-secondary-bg p-3 rounded-md">
+                        <h4 class="font-semibold mb-2 text-orange-400"><i class="fas fa-hand-holding-usd mr-2"></i>Comisiones</h4>
+                        <p class="text-sm">Las comisiones reducen el rendimiento neto. El 0.40% adicional en 401(k) impacta el tiempo necesario para alcanzar el objetivo.</p>
+                    </div>
+                    <div class="bg-secondary-bg p-3 rounded-md">
+                        <h4 class="font-semibold mb-2 text-green-400"><i class="fas fa-money-bill-wave mr-2"></i>Aportaciones</h4>
+                        <p class="text-sm">Mayor capacidad de aportación (401k vs IRA) y contribuciones del empleador (match) aceleran significativamente el crecimiento.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section class="bg-card p-6 mb-12 card-animation">
+            <h2 class="text-2xl font-semibold mb-4 section-header">Tabla Comparativa de Resultados</h2>
+            
+            <div class="overflow-x-auto">
+                <table class="mb-6 rounded-lg overflow-hidden">
+                    <thead>
+                        <tr>
+                            <th class="text-left">Característica</th>
+                            <th>IRA Tradicional</th>
+                            <th>Roth IRA</th>
+                            <th>401(k) sin Match</th>
+                            <th>401(k) con Match</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Contribución anual empleado</td>
+                            <td>$7,500</td>
+                            <td>$7,500</td>
+                            <td>$12,000</td>
+                            <td>$12,000</td>
+                        </tr>
+                        <tr>
+                            <td>Contribución anual empleador</td>
+                            <td>$0</td>
+                            <td>$0</td>
+                            <td>$0</td>
+                            <td>$3,000</td>
+                        </tr>
+                        <tr>
+                            <td>Años para $1M netos</td>
+                            <td>37.5</td>
+                            <td>33.8</td>
+                            <td>32.4</td>
+                            <td class="font-bold text-orange-400">29.5</td>
+                        </tr>
+                        <tr>
+                            <td>Edad meta</td>
+                            <td>67.5</td>
+                            <td>63.8</td>
+                            <td>62.4</td>
+                            <td>59.5</td>
+                        </tr>
+                        <tr>
+                            <td>Total aportado empleado</td>
+                            <td>$281,100</td>
+                            <td>$253,125</td>
+                            <td>$389,280</td>
+                            <td>$354,120</td>
+                        </tr>
+                        <tr>
+                            <td>Total aportado empleador</td>
+                            <td>$0</td>
+                            <td>$0</td>
+                            <td>$0</td>
+                            <td>$88,530</td>
+                        </tr>
+                        <tr>
+                            <td>Ganancia antes de impuestos</td>
+                            <td>$1,052,233</td>
+                            <td>$746,875</td>
+                            <td>$944,053</td>
+                            <td>$890,683</td>
+                        </tr>
+                        <tr>
+                            <td>Impuestos retiro</td>
+                            <td>$333,333</td>
+                            <td class="font-bold text-green-400">$0</td>
+                            <td>$333,333</td>
+                            <td>$333,333</td>
+                        </tr>
+                        <tr>
+                            <td>Ganancia después de impuestos</td>
+                            <td>$718,900</td>
+                            <td class="font-bold text-green-400">$746,875</td>
+                            <td>$610,720</td>
+                            <td>$557,350</td>
+                        </tr>
+                        <tr>
+                            <td>Saldo bruto final</td>
+                            <td>$1,333,333</td>
+                            <td>$1,000,000</td>
+                            <td>$1,333,333</td>
+                            <td>$1,333,333</td>
+                        </tr>
+                        <tr>
+                            <td>Saldo neto final</td>
+                            <td>$1,000,000</td>
+                            <td>$1,000,000</td>
+                            <td>$1,000,000</td>
+                            <td>$1,000,000</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="visualization-container p-4">
+                <div class="h-80">
+                    <canvas id="financialComparison"></canvas>
+                </div>
+            </div>
+        </section>
+        
+        <section class="bg-card p-6 mb-12 card-animation">
+            <h2 class="text-2xl font-semibold mb-4 section-header">Poder Adquisitivo de $1,000,000 Futuro</h2>
+            
+            <p class="mb-4">El valor de $1,000,000 en el futuro será diferente al de hoy debido a la inflación. Con una tasa de inflación proyectada del 2.9% anual, el poder adquisitivo real sería:</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="bg-secondary-bg border border-gray-700 p-4 rounded-lg gradient-card">
+                    <h3 class="text-lg font-semibold mb-2 text-center">IRA Tradicional</h3>
+                    <div class="text-center">
+                        <p class="text-sm text-gray-400">En 37.5 años:</p>
+                        <p class="text-3xl font-bold text-red-400">$343,865</p>
+                        <p class="text-xs text-gray-500 mt-1">en dólares de 2025</p>
+                    </div>
+                </div>
+                
+                <div class="bg-secondary-bg border border-gray-700 p-4 rounded-lg gradient-card">
+                    <h3 class="text-lg font-semibold mb-2 text-center">Roth IRA</h3>
+                    <div class="text-center">
+                        <p class="text-sm text-gray-400">En 33.8 años:</p>
+                        <p class="text-3xl font-bold text-amber-400">$381,375</p>
+                        <p class="text-xs text-gray-500 mt-1">en dólares de 2025</p>
+                    </div>
+                </div>
+                
+                <div class="bg-secondary-bg border border-gray-700 p-4 rounded-lg gradient-card">
+                    <h3 class="text-lg font-semibold mb-2 text-center">401(k) sin Match</h3>
+                    <div class="text-center">
+                        <p class="text-sm text-gray-400">En 32.4 años:</p>
+                        <p class="text-3xl font-bold text-yellow-400">$397,889</p>
+                        <p class="text-xs text-gray-500 mt-1">en dólares de 2025</p>
+                    </div>
+                </div>
+                
+                <div class="bg-secondary-bg border border-gray-700 p-4 rounded-lg gradient-card">
+                    <h3 class="text-lg font-semibold mb-2 text-center">401(k) con Match</h3>
+                    <div class="text-center">
+                        <p class="text-sm text-gray-400">En 29.5 años:</p>
+                        <p class="text-3xl font-bold text-green-400">$430,869</p>
+                        <p class="text-xs text-gray-500 mt-1">en dólares de 2025</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="visualization-container p-4">
+                <div class="h-72">
+                    <canvas id="purchasingPowerChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="mt-6 p-4 bg-blue-900 bg-opacity-20 rounded-lg border border-blue-800">
+                <h3 class="font-semibold mb-2">Impacto de la Inflación en Largo Plazo</h3>
+                <p>Una tasa de inflación constante del 2.9% reduce el poder adquisitivo casi a la mitad cada 25 años. El 401(k) con match alcanza el millón en menos tiempo, preservando más del 43% del poder adquisitivo original, mientras que el IRA Tradicional preserva solo el 34%.</p>
+            </div>
+        </section>
+        
+        <section class="bg-card p-6 mb-12 card-animation">
+            <h2 class="text-2xl font-semibold mb-4 section-header">Análisis Detallado por Cuenta</h2>
+            
+            <div class="mb-4">
+                <div class="flex overflow-x-auto border-b border-gray-700">
+                    <button class="tab-btn active" data-tab="tab1">IRA Tradicional</button>
+                    <button class="tab-btn" data-tab="tab2">Roth IRA</button>
+                    <button class="tab-btn" data-tab="tab3">401(k) sin Match</button>
+                    <button class="tab-btn" data-tab="tab4">401(k) con Match</button>
+                </div>
+                
+                <div id="tab1" class="tab-content active p-4">
+                    <h3 class="text-xl font-semibold mb-3 accent-blue">IRA Tradicional</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h4 class="font-semibold mb-2">Características Principales</h4>
+                            <ul class="space-y-2 mb-4">
+                                <li><i class="fas fa-check-circle mr-2 text-blue-500"></i> Contribuciones deducibles de impuestos</li>
+                                <li><i class="fas fa-check-circle mr-2 text-blue-500"></i> Crecimiento con impuestos diferidos</li>
+                                <li><i class="fas fa-times-circle mr-2 text-red-500"></i> Retiros gravados al 25%</li>
+                                <li><i class="fas fa-times-circle mr-2 text-red-500"></i> Límite de contribución $7,500 anuales</li>
+                            </ul>
+                            
+                            <div class="bg-secondary-bg p-4 rounded-md">
+                                <h4 class="font-semibold mb-2">Puntos Clave del Análisis</h4>
+                                <ul class="text-sm space-y-1">
+                                    <li>• Rendimiento real: 7.27% anual (10.2% - 0.03% - 2.9%)</li>
+                                    <li>• Objetivo bruto: $1,333,333 para obtener $1M netos</li>
+                                    <li>• Tiempo estimado: <strong>37.5 años</strong></li>
+                                    <li>• Total aportado: $281,100 (solo empleado)</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold mb-2">Análisis de Ventajas y Desventajas</h4>
+                            <div class="space-y-3">
+                                <div class="p-3 bg-blue-900 bg-opacity-30 rounded-md">
+                                    <h5 class="font-semibold text-blue-400">Ventajas</h5>
+                                    <ul class="text-sm space-y-1">
+                                        <li>• Beneficio fiscal inmediato en aportaciones</li>
+                                        <li>• Ideal si se espera estar en un tramo fiscal inferior durante el retiro</li>
+                                        <li>• Sin comisiones de custodia en este análisis</li>
+                                    </ul>
+                                </div>
+                                <div class="p-3 bg-red-900 bg-opacity-30 rounded-md">
+                                    <h5 class="font-semibold text-red-400">Desventajas</h5>
+                                    <ul class="text-sm space-y-1">
+                                        <li>• Tiempo más largo para alcanzar la meta (37.5 años)</li>
+                                        <li>• Menor poder adquisitivo final ($343,865 en dólares de 2025)</li>
+                                        <li>• Limitación en aportaciones anuales ($7,500)</li>
+                                        <li>• Impuestos sobre el total retirado, incluidas ganancias</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="tab2" class="tab-content p-4">
+                    <h3 class="text-xl font-semibold mb-3 accent-orange">Roth IRA</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h4 class="font-semibold mb-2">Características Principales</h4>
+                            <ul class="space-y-2 mb-4">
+                                <li><i class="fas fa-times-circle mr-2 text-red-500"></i> Contribuciones con impuestos ya pagados</li>
+                                <li><i class="fas fa-check-circle mr-2 text-green-500"></i> Crecimiento libre de impuestos</li>
+                                <li><i class="fas fa-check-circle mr-2 text-green-500"></i> Retiros 100% libres de impuestos (calificados)</li>
+                                <li><i class="fas fa-times-circle mr-2 text-red-500"></i> Límite de contribución $7,500 anuales</li>
+                            </ul>
+                            
+                            <div class="bg-secondary-bg p-4 rounded-md">
+                                <h4 class="font-semibold mb-2">Puntos Clave del Análisis</h4>
+                                <ul class="text-sm space-y-1">
+                                    <li>• Rendimiento real: 7.27% anual (10.2% - 0.03% - 2.9%)</li>
+                                    <li>• Objetivo: $1,000,000 (no hay impuestos en retiro)</li>
+                                    <li>• Tiempo estimado: <strong>33.8 años</strong></li>
+                                    <li>• Total aportado: $253,125 (solo empleado)</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold mb-2">Análisis de Ventajas y Desventajas</h4>
+                            <div class="space-y-3">
+                                <div class="p-3 bg-blue-900 bg-opacity-30 rounded-md">
+                                    <h5 class="font-semibold text-blue-400">Ventajas</h5>
+                                    <ul class="text-sm space-y-1">
+                                        <li>• Retiros completamente libres de impuestos</li>
+                                        <li>• Menor tiempo que IRA Tradicional para meta</li>
+                                        <li>• Mayor poder adquisitivo ($381,375 en dólares de 2025)</li>
+                                        <li>• Sin comisiones de custodia en este análisis</li>
+                                    </ul>
+                                </div>
+                                <div class="p-3 bg-red-900 bg-opacity-30 rounded-md">
+                                    <h5 class="font-semibold text-red-400">Desventajas</h5>
+                                    <ul class="text-sm space-y-1">
+                                        <li>• No hay beneficio fiscal en las aportaciones</li>
+                                        <li>• Limitación en aportaciones anuales ($7,500)</li>
+                                        <li>• Menos ideal si se espera estar en un tramo fiscal menor durante el retiro</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="tab3" class="tab-content p-4">
+                    <h3 class="text-xl font-semibold mb-3 accent-blue">401(k) sin Employer Match</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h4 class="font-semibold mb-2">Características Principales</h4>
+                            <ul class="space-y-2 mb-4">
+                                <li><i class="fas fa-check-circle mr-2 text-blue-500"></i> Contribuciones deducibles de impuestos</li>
+                                <li><i class="fas fa-check-circle mr-2 text-blue-500"></i> Crecimiento con impuestos diferidos</li>
+                                <li><i class="fas fa-times-circle mr-2 text-red-500"></i> Retiros gravados al 25%</li>
+                                <li><i class="fas fa-check-circle mr-2 text-blue-500"></i> Mayor límite de contribución ($23,500)</li>
+                                <li><i class="fas fa-times-circle mr-2 text-red-500"></i> Comisiones administrativas más altas (0.40%)</li>
+                            </ul>
+                            
+                            <div class="bg-secondary-bg p-4 rounded-md">
+                                <h4 class="font-semibold mb-2">Puntos Clave del Análisis</h4>
+                                <ul class="text-sm space-y-1">
+                                    <li>• Rendimiento real: 6.87% anual (10.2% - 0.03% - 0.40% - 2.9%)</li>
+                                    <li>• Objetivo bruto: $1,333,333 para $1M netos</li>
+                                    <li>• Tiempo estimado: <strong>32.4 años</strong></li>
+                                    <li>• Total aportado: $389,280 (contribución anual $12,000)</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold mb-2">Análisis de Ventajas y Desventajas</h4>
+                            <div class="space-y-3">
+                                <div class="p-3 bg-blue-900 bg-opacity-30 rounded-md">
+                                    <h5 class="font-semibold text-blue-400">Ventajas</h5>
+                                    <ul class="text-sm space-y-1">
+                                        <li>• Mayor capacidad de contribución anual</li>
+                                        <li>• Beneficio fiscal inmediato en aportaciones</li>
+                                        <li>• Menor tiempo que IRA Tradicional para meta</li>
+                                        <li>• Mejor poder adquisitivo ($397,889 en dólares de 2025)</li>
+                                    </ul>
+                                </div>
+                                <div class="p-3 bg-red-900 bg-opacity-30 rounded-md">
+                                    <h5 class="font-semibold text-red-400">Desventajas</h5>
+                                    <ul class="text-sm space-y-1">
+                                        <li>• Mayores comisiones administrativas (0.40%)</li>
+                                        <li>• Rendimiento real reducido (6.87% vs 7.27% en IRA)</li>
+                                        <li>• Impuestos sobre el total retirado, incluidas ganancias</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="tab4" class="tab-content p-4">
+                    <h3 class="text-xl font-semibold mb-3 accent-orange">401(k) con Employer Match</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h4 class="font-semibold mb-2">Características Principales</h4>
+                            <ul class="space-y-2 mb-4">
+                                <li><i class="fas fa-check-circle mr-2 text-blue-500"></i> Contribuciones deducibles de impuestos</li>
+                                <li><i class="fas fa-check-circle mr-2 text-blue-500"></i> Crecimiento con impuestos diferidos</li>
+                                <li><i class="fas fa-times-circle mr-2 text-red-500"></i> Retiros gravados al 25%</li>
+                                <li><i class="fas fa-check-circle mr-2 text-green-500"></i> Match del empleador: 50% de primeros $6,000 ($3,000 máx)</li>
+                                <li><i class="fas fa-times-circle mr-2 text-red-500"></i> Comisiones administrativas más altas (0.40%)</li>
+                            </ul>
+                            
+                            <div class="bg-secondary-bg p-4 rounded-md">
+                                <h4 class="font-semibold mb-2">Puntos Clave del Análisis</h4>
+                                <ul class="text-sm space-y-1">
+                                    <li>• Rendimiento real: 6.87% anual (10.2% - 0.03% - 0.40% - 2.9%)</li>
+                                    <li>• Objetivo bruto: $1,333,333 para $1M netos</li>
+                                    <li>• Tiempo estimado: <strong>29.5 años</strong></li>
+                                    <li>• Total aportado: $354,120 (empleado) + $88,530 (empleador)</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold mb-2">Análisis de Ventajas y Desventajas</h4>
+                            <div class="space-y-3">
+                                <div class="p-3 bg-blue-900 bg-opacity-30 rounded-md">
+                                    <h5 class="font-semibold text-blue-400">Ventajas</h5>
+                                    <ul class="text-sm space-y-1">
+                                        <li>• <strong>Tiempo más corto para alcanzar la meta</strong> (29.5 años)</li>
+                                        <li>• Contribución adicional "gratuita" del empleador</li>
+                                        <li>• <strong>Mayor poder adquisitivo</strong> ($430,869 en dólares de 2025)</li>
+                                        <li>• Beneficio fiscal inmediato en aportaciones</li>
+                                    </ul>
+                                </div>
+                                <div class="p-3 bg-red-900 bg-opacity-30 rounded-md">
+                                    <h5 class="font-semibold text-red-400">Desventajas</h5>
+                                    <ul class="text-sm space-y-1">
+                                        <li>• Mayores comisiones administrativas (0.40%)</li>
+                                        <li>• Rendimiento real reducido (6.87% vs 7.27% en IRA)</li>
+                                        <li>• Impuestos sobre el total retirado, incluidas ganancias</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section class="bg-card p-6 mb-12 card-animation">
+            <h2 class="text-2xl font-semibold mb-6 section-header">Cronología para Alcanzar $1 Millón</h2>
+            
+            <div class="timeline">
+                <div class="timeline-container left">
+                    <div class="timeline-content">
+                        <h3 class="font-semibold mb-1">Inicio del Plan</h3>
+                        <p class="text-sm text-gray-400">Edad: 30 años</p>
+                        <p class="text-sm">Comienza la inversión regular en la cuenta elegida.</p>
+                    </div>
+                </div>
+                <div class="timeline-container right">
+                    <div class="timeline-content">
+                        <h3 class="font-semibold mb-1">401(k) con Match</h3>
+                        <p class="text-sm text-gray-400">Edad: 59.5 años</p>
+                        <p class="text-sm">Primera opción en alcanzar $1M netos. Poder adquisitivo: $430,869.</p>
+                    </div>
+                </div>
+                <div class="timeline-container left">
+                    <div class="timeline-content">
+                        <h3 class="font-semibold mb-1">401(k) sin Match</h3>
+                        <p class="text-sm text-gray-400">Edad: 62.4 años</p>
+                        <p class="text-sm">Segunda opción en alcanzar la meta. Poder adquisitivo: $397,889.</p>
+                    </div>
+                </div>
+                <div class="timeline-container right">
+                    <div class="timeline-content">
+                        <h3 class="font-semibold mb-1">Roth IRA</h3>
+                        <p class="text-sm text-gray-400">Edad: 63.8 años</p>
+                        <p class="text-sm">Tercera opción en alcanzar la meta. Poder adquisitivo: $381,375.</p>
+                    </div>
+                </div>
+                <div class="timeline-container left">
+                    <div class="timeline-content">
+                        <h3 class="font-semibold mb-1">IRA Tradicional</h3>
+                        <p class="text-sm text-gray-400">Edad: 67.5 años</p>
+                        <p class="text-sm">Última opción en alcanzar $1M netos. Poder adquisitivo: $343,865.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section class="bg-card p-6 mb-12 card-animation">
+            <h2 class="text-2xl font-semibold mb-4 section-header">Conclusiones Principales</h2>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="space-y-6">
+                    <div class="p-4 border border-blue-700 bg-blue-900 bg-opacity-20 rounded-lg">
+                        <h3 class="text-xl font-semibold mb-3 text-blue-400">Eficiencia por Tiempo</h3>
+                        <p class="mb-2">El <strong class="text-orange-400">401(k) con employer match</strong> es el vehículo más eficiente para alcanzar $1M netos en el menor tiempo (29.5 años), gracias a la contribución adicional del empleador.</p>
+                        <p>La mayor contribución anual compensa las comisiones más altas en el 401(k) sin match, haciéndolo más rápido que las opciones IRA.</p>
+                    </div>
+                    
+                    <div class="p-4 border border-green-700 bg-green-900 bg-opacity-20 rounded-lg">
+                        <h3 class="text-xl font-semibold mb-3 text-green-400">Ventaja Fiscal del Roth IRA</h3>
+                        <p class="mb-2">El <strong class="text-orange-400">Roth IRA</strong> ofrece la mayor ganancia después de impuestos ($746,875) gracias a que los retiros están completamente exentos de impuestos.</p>
+                        <p>Esto lo hace particularmente atractivo para quienes esperan estar en tramos fiscales iguales o superiores durante el retiro.</p>
+                    </div>
+                    
+                    <div class="p-4 border border-yellow-700 bg-yellow-900 bg-opacity-20 rounded-lg">
+                        <h3 class="text-xl font-semibold mb-3 text-yellow-400">Poder Adquisitivo Real</h3>
+                        <p class="mb-2">El poder adquisitivo del millón de dólares varía significativamente según el tiempo para alcanzarlo:</p>
+                        <ul class="list-disc pl-5 space-y-1 text-sm">
+                            <li>401(k) con match: <strong>$430,869</strong> (mejor valor por menor tiempo)</li>
+                            <li>401(k) sin match: $397,889</li>
+                            <li>Roth IRA: $381,375</li>
+                            <li>IRA Tradicional: $343,865 (peor valor por mayor tiempo)</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div>
+                    <div class="p-4 border border-purple-700 bg-purple-900 bg-opacity-20 rounded-lg mb-6">
+                        <h3 class="text-xl font-semibold mb-3 text-purple-400">Consideraciones Estratégicas</h3>
+                        <ul class="space-y-3 stat-container">
+                            <li class="stat-item">
+                                <span><strong class="text-yellow-400">Diversificación fiscal:</strong> Combinar instrumentos tradicionales y Roth puede ofrecer flexibilidad en el retiro y protección contra cambios en tasas impositivas futuras.</span>
+                            </li>
+                            <li class="stat-item">
+                                <span><strong class="text-yellow-400">Employer match:</strong> Siempre aprovechar al máximo la contribución del empleador antes de considerar otras opciones, ya que representa un "rendimiento inmediato" del 50% o más.</span>
+                            </li>
+                            <li class="stat-item">
+                                <span><strong class="text-yellow-400">Estrategia escalonada:</strong> Considerar primero maximizar el 401(k) hasta el match, luego Roth IRA, y finalmente volver al 401(k) para contribuciones adicionales.</span>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="p-4 border border-red-700 bg-red-900 bg-opacity-20 rounded-lg">
+                        <h3 class="text-xl font-semibold mb-3 text-red-400">Limitaciones del Análisis</h3>
+                        <ul class="space-y-2 text-sm">
+                            <li>• Asume parámetros constantes (rendimientos, inflación, tasas impositivas)</li>
+                            <li>• No incluye contribuciones adicionales ("catch-up") permitidas después de los 50 años</li>
+                            <li>• No contempla inversión del excedente de ahorro fuera del límite IRA</li>
+                            <li>• No considera cambios legislativos o fiscales futuros</li>
+                            <li>• El análisis se realizó para cada instrumento de forma individual, no en combinación</li>
+                        </ul>
+                        <p class="text-xs text-gray-400 mt-3 italic">Este análisis proporciona una hoja de ruta cuantitativa basada en los supuestos actuales, pero las decisiones de inversión deben considerar la situación personal completa y, preferiblemente, contar con el asesoramiento de un profesional financiero.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <footer class="text-center text-gray-500 text-sm mt-16">
+            <p class="mb-2">Análisis Comparativo de Rendimiento a Largo Plazo para Cuentas de Retiro</p>
+            <p>© Mayo 2025 • Datos basados en supuestos vigentes a mayo de 2025</p>
+        </footer>
+    </div>
+    
+    <script>
+        // Funcionalidad de pestañas
+        document.querySelectorAll('.tab-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                // Desactivar todas las pestañas
+                document.querySelectorAll('.tab-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                
+                // Activar la pestaña seleccionada
+                button.classList.add('active');
+                document.getElementById(button.getAttribute('data-tab')).classList.add('active');
+            });
+        });
+        
+        // Indicador de progreso de scroll
+        window.onscroll = function() {
+            let winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            let height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            let scrolled = (winScroll / height) * 100;
+            document.getElementById("progressBar").style.width = scrolled + "%";
+            
+            // Animación de elementos al hacer scroll
+            animateOnScroll();
+        };
+        
+        // Funcionalidad para animación de elementos al scroll
+        function animateOnScroll() {
+            const animatedElements = document.querySelectorAll('.card-animation');
+            
+            animatedElements.forEach(element => {
+                const elementPosition = element.getBoundingClientRect().top;
+                const screenPosition = window.innerHeight / 1.2;
+                
+                if (elementPosition < screenPosition) {
+                    element.classList.add('visible');
+                }
+            });
+        }
+        
+        // Iniciar animación cuando se carga la página
+        window.addEventListener('load', () => {
+            setTimeout(animateOnScroll, 100);
+        });
+        
+        // Datos de crecimiento para las gráficas
+        const growthData = {
+            'ira-trad': {
+                years: Array.from({length: 38}, (_, i) => i),
+                values: [0, 8040, 16720, 26106, 36265, 47276, 59224, 72197, 86290, 101606, 118254, 136356, 156037, 177437, 
+                         200709, 226021, 253552, 283494, 316059, 351473, 389981, 431844, 477351, 526817, 580578, 639000, 
+                         702471, 771413, 846278, 927553, 1015764, 1111473, 1215277, 1327817, 1449781, 1581901, 1724955, 1880775],
+                label: 'IRA Tradicional (bruto)'
+            },
+            'roth-ira': {
+                years: Array.from({length: 34}, (_, i) => i),
+                values: [0, 8040, 16720, 26106, 36265, 47276, 59224, 72197, 86290, 101606, 118254, 136356, 156037, 177437, 
+                         200709, 226021, 253552, 283494, 316059, 351473, 389981, 431844, 477351, 526817, 580578, 639000, 
+                         702471, 771413, 846278, 927553, 1015764, 1111473, 1215277, 1327817],
+                label: 'Roth IRA'
+            },
+            '401k-no': {
+                years: Array.from({length: 33}, (_, i) => i),
+                values: [0, 12822, 26705, 41736, 58012, 75636, 94722, 115391, 137775, 162012, 188251, 216650, 247380, 280627, 
+                         316594, 355495, 397562, 443039, 492188, 545286, 602626, 664522, 731312, 803359, 881053, 964812, 
+                         1055090, 1152378, 1257200, 1370122, 1491753, 1622749, 1764818],
+                label: '401(k) sin Match (bruto)'
+            },
+            '401k-match': {
+                years: Array.from({length: 30}, (_, i) => i),
+                values: [0, 16028, 33382, 52170, 72515, 94546, 118403, 144239, 172219, 202515, 235313, 270813, 309226, 350784, 
+                         395743, 444369, 496953, 553803, 615251, 681650, 753383, 830857, 914509, 1004805, 1102243, 1207348, 
+                         1320684, 1442862, 1574535, 1716409],
+                label: '401(k) con Match (bruto)'
+            }
+        };
+        
+        // Gráfico de comparación de tiempo
+        const timeCtx = document.getElementById('timeComparison').getContext('2d');
+        const timeChart = new Chart(timeCtx, {
+            type: 'bar',
+            data: {
+                labels: ['IRA Tradicional', 'Roth IRA', '401(k) sin Match', '401(k) con Match'],
+                datasets: [{
+                    label: 'Años para alcanzar $1M netos',
+                    data: [37.5, 33.8, 32.4, 29.5],
+                    backgroundColor: [
+                        'rgba(59, 130, 246, 0.7)',
+                        'rgba(249, 115, 22, 0.7)',
+                        'rgba(59, 130, 246, 0.7)',
+                        'rgba(249, 115, 22, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgba(59, 130, 246, 1)',
+                        'rgba(249, 115, 22, 1)',
+                        'rgba(59, 130, 246, 1)',
+                        'rgba(249, 115, 22, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                        bodyFont: {
+                            size: 14
+                        },
+                        titleFont: {
+                            size: 16,
+                            weight: 'bold'
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(148, 163, 184, 0.1)'
+                        },
+                        ticks: {
+                            color: '#94a3b8'
+                        },
+                        title: {
+                            display: true,
+                            text: 'Años',
+                            color: '#94a3b8',
+                            font: {
+                                size: 14
+                            }
+                        }
+                    },
+                    x: {
+                        grid: {
+                            color: 'rgba(148, 163, 184, 0.1)'
+                        },
+                        ticks: {
+                            color: '#94a3b8'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Gráfico de comparación financiera
+        const finCtx = document.getElementById('financialComparison').getContext('2d');
+        const finChart = new Chart(finCtx, {
+            type: 'bar',
+            data: {
+                labels: ['IRA Tradicional', 'Roth IRA', '401(k) sin Match', '401(k) con Match'],
+                datasets: [
+                    {
+                        label: 'Total aportado empleado',
+                        data: [281100, 253125, 389280, 354120],
+                        backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                        stack: 'Stack 0'
+                    },
+                    {
+                        label: 'Total aportado empleador',
+                        data: [0, 0, 0, 88530],
+                        backgroundColor: 'rgba(249, 115, 22, 0.7)',
+                        stack: 'Stack 0'
+                    },
+                    {
+                        label: 'Ganancia después de impuestos',
+                        data: [718900, 746875, 610720, 557350],
+                        backgroundColor: 'rgba(34, 197, 94, 0.7)',
+                        stack: 'Stack 0'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed.y);
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        stacked: true,
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(148, 163, 184, 0.1)'
+                        },
+                        ticks: {
+                            color: '#94a3b8',
+                            callback: function(value) {
+                                return '$' + value.toLocaleString();
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Dólares USD',
+                            color: '#94a3b8',
+                            font: {
+                                size: 14
+                            }
+                        }
+                    },
+                    x: {
+                        stacked: true,
+                        grid: {
+                            color: 'rgba(148, 163, 184, 0.1)'
+                        },
+                        ticks: {
+                            color: '#94a3b8'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Gráfico de poder adquisitivo
+        const powerCtx = document.getElementById('purchasingPowerChart').getContext('2d');
+        const powerChart = new Chart(powerCtx, {
+            type: 'bar',
+            data: {
+                labels: ['IRA Tradicional (37.5 años)', 'Roth IRA (33.8 años)', '401(k) sin Match (32.4 años)', '401(k) con Match (29.5 años)'],
+                datasets: [{
+                    label: 'Poder adquisitivo en dólares de 2025',
+                    data: [343865, 381375, 397889, 430869],
+                    backgroundColor: [
+                        'rgba(239, 68, 68, 0.7)',
+                        'rgba(245, 158, 11, 0.7)',
+                        'rgba(234, 179, 8, 0.7)',
+                        'rgba(34, 197, 94, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgba(239, 68, 68, 1)',
+                        'rgba(245, 158, 11, 1)',
+                        'rgba(234, 179, 8, 1)',
+                        'rgba(34, 197, 94, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.x !== null) {
+                                    label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed.x);
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(148, 163, 184, 0.1)'
+                        },
+                        ticks: {
+                            color: '#94a3b8',
+                            callback: function(value) {
+                                return '$' + value.toLocaleString();
+                            }
+                        }
+                    },
+                    y: {
+                        grid: {
+                            color: 'rgba(148, 163, 184, 0.1)'
+                        },
+                        ticks: {
+                            color: '#94a3b8'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Gráfico de crecimiento
+        const growthCtx = document.getElementById('growthChart').getContext('2d');
+        let selectedAccount = 'ira-trad';
+        
+        let growthChart = new Chart(growthCtx, {
+            type: 'line',
+            data: {
+                labels: growthData[selectedAccount].years,
+                datasets: [{
+                    label: growthData[selectedAccount].label,
+                    data: growthData[selectedAccount].values,
+                    borderColor: 'rgba(59, 130, 246, 1)',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 2,
+                    pointHoverRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed.y);
+                                }
+                                return label;
+                            },
+                            title: function(context) {
+                                return 'Año ' + context[0].label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(148, 163, 184, 0.1)'
+                        },
+                        ticks: {
+                            color: '#94a3b8',
+                            callback: function(value) {
+                                if (value >= 1000000) {
+                                    return '$' + (value / 1000000).toFixed(1) + 'M';
+                                }
+                                return '$' + value.toLocaleString();
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Saldo ($USD)',
+                            color: '#94a3b8'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            color: 'rgba(148, 163, 184, 0.1)'
+                        },
+                        ticks: {
+                            color: '#94a3b8'
+                        },
+                        title: {
+                            display: true,
+                            text: 'Años',
+                            color: '#94a3b8'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Actualizar gráfico de crecimiento al cambiar de cuenta
+        document.querySelectorAll('.growth-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                document.querySelectorAll('.growth-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                button.classList.add('active');
+                
+                selectedAccount = button.getAttribute('data-account');
+                
+                growthChart.data.labels = growthData[selectedAccount].years;
+                growthChart.data.datasets[0].data = growthData[selectedAccount].values;
+                growthChart.data.datasets[0].label = growthData[selectedAccount].label;
+                
+                // Cambiar color según la cuenta
+                if (selectedAccount === 'ira-trad' || selectedAccount === '401k-no') {
+                    growthChart.data.datasets[0].borderColor = 'rgba(59, 130, 246, 1)';
+                    growthChart.data.datasets[0].backgroundColor = 'rgba(59, 130, 246, 0.1)';
+                } else {
+                    growthChart.data.datasets[0].borderColor = 'rgba(249, 115, 22, 1)';
+                    growthChart.data.datasets[0].backgroundColor = 'rgba(249, 115, 22, 0.1)';
+                }
+                
+                growthChart.update();
+            });
+        });
+        
+        // Gráfico interactivo de comparación
+        const interactiveCtx = document.getElementById('interactiveComparison').getContext('2d');
+        let comparisonType = 'years';
+        let activeAccounts = {
+            'ira-trad': true,
+            'roth-ira': true,
+            '401k-no': true,
+            '401k-match': true
+        };
+        
+        const comparisonData = {
+            years: {
+                labels: ['Años para $1M netos'],
+                datasets: [
+                    {
+                        label: 'IRA Tradicional',
+                        data: [37.5],
+                        backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Roth IRA',
+                        data: [33.8],
+                        backgroundColor: 'rgba(249, 115, 22, 0.7)',
+                        borderColor: 'rgba(249, 115, 22, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: '401(k) sin Match',
+                        data: [32.4],
+                        backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: '401(k) con Match',
+                        data: [29.5],
+                        backgroundColor: 'rgba(249, 115, 22, 0.7)',
+                        borderColor: 'rgba(249, 115, 22, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            contributions: {
+                labels: ['Total aportado por empleado'],
+                datasets: [
+                    {
+                        label: 'IRA Tradicional',
+                        data: [281100],
+                        backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Roth IRA',
+                        data: [253125],
+                        backgroundColor: 'rgba(249, 115, 22, 0.7)',
+                        borderColor: 'rgba(249, 115, 22, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: '401(k) sin Match',
+                        data: [389280],
+                        backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: '401(k) con Match',
+                        data: [354120],
+                        backgroundColor: 'rgba(249, 115, 22, 0.7)',
+                        borderColor: 'rgba(249, 115, 22, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            value: {
+                labels: ['Poder adquisitivo (USD 2025)'],
+                datasets: [
+                    {
+                        label: 'IRA Tradicional',
+                        data: [343865],
+                        backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Roth IRA',
+                        data: [381375],
+                        backgroundColor: 'rgba(249, 115, 22, 0.7)',
+                        borderColor: 'rgba(249, 115, 22, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: '401(k) sin Match',
+                        data: [397889],
+                        backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: '401(k) con Match',
+                        data: [430869],
+                        backgroundColor: 'rgba(249, 115, 22, 0.7)',
+                        borderColor: 'rgba(249, 115, 22, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            }
+        };
+        
+        const interactiveChart = new Chart(interactiveCtx, {
+            type: 'bar',
+            data: comparisonData[comparisonType],
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                let value = context.parsed.y;
+                                if (comparisonType === 'years') {
+                                    label += value + ' años';
+                                } else {
+                                    label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(148, 163, 184, 0.1)'
+                        },
+                        ticks: {
+                            color: '#94a3b8',
+                            callback: function(value) {
+                                if (comparisonType === 'years') {
+                                    return value;
+                                }
+                                return '$' + value.toLocaleString();
+                            }
+                        }
+                    },
+                    x: {
+                        grid: {
+                            color: 'rgba(148, 163, 184, 0.1)'
+                        },
+                        ticks: {
+                            color: '#94a3b8'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Actualizar gráfico interactivo según tipo de comparación
+        document.querySelectorAll('.comparison-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                document.querySelectorAll('.comparison-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                button.classList.add('active');
+                
+                comparisonType = button.getAttribute('data-type');
+                updateInteractiveChart();
+            });
+        });
+        
+        // Actualizar gráfico interactivo según cuentas seleccionadas
+        document.querySelectorAll('.account-toggle').forEach(checkbox => {
+            checkbox.addEventListener('change', () => {
+                activeAccounts[checkbox.id] = checkbox.checked;
+                updateInteractiveChart();
+            });
+        });
+        
+        function updateInteractiveChart() {
+            // Filtrar datasets activos según checkboxes
+            const activeDatasets = comparisonData[comparisonType].datasets.filter((dataset, index) => {
+                const accountIds = ['ira-trad', 'roth-ira', '401k-no', '401k-match'];
+                return activeAccounts[accountIds[index]];
+            });
+            
+            interactiveChart.data.datasets = activeDatasets;
+            interactiveChart.data.labels = comparisonData[comparisonType].labels;
+            
+            // Actualizar escala Y según tipo de datos
+            if (comparisonType === 'years') {
+                interactiveChart.options.scales.y.title = {
+                    display: true,
+                    text: 'Años',
+                    color: '#94a3b8'
+                };
+            } else {
+                interactiveChart.options.scales.y.title = {
+                    display: true,
+                    text: 'Dólares USD',
+                    color: '#94a3b8'
+                };
+            }
+            
+            interactiveChart.update();
+        }
+        
+        // Activar animación de contadores
+        function animateCounters() {
+            document.querySelectorAll('.counter').forEach(counter => {
+                const target = parseFloat(counter.innerText);
+                const duration = 1500;
+                const step = 30;
+                let current = 0;
+                const increment = target / (duration / step);
+                
+                const timer = setInterval(() => {
+                    current += increment;
+                    if (current >= target) {
+                        counter.innerText = target;
+                        clearInterval(timer);
+                    } else {
+                        counter.innerText = current.toFixed(1);
+                    }
+                }, step);
+            });
+        }
+        
+        // Ejecutar animación de contadores al cargar
+        window.addEventListener('load', animateCounters);
+    </script>
+</body>
+</html>
